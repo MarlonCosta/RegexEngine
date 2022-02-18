@@ -14,16 +14,20 @@ def compare_regex_same_length(regex: str, string: str):
     """Checks if a regex matches a string of the same length"""
     if not regex:
         return True
+    if regex == "$":
+        return string == ""
     if not string:
         return False
-    if compare_regex_char(regex[0], string[0]):
+    if not compare_regex_char(regex[0], string[0]):
+        return False
+    else:
         return compare_regex_same_length(regex[1:], string[1:])
 
 
 # Project 3
 def compare_regex_variable_length(regex: str, string: str):
     """Checks if a regex matches a string of variable length"""
-    if regex == "":
+    if not regex:
         return True
     elif string:
         if compare_regex_same_length(regex, string):
@@ -34,6 +38,26 @@ def compare_regex_variable_length(regex: str, string: str):
         return False
 
 
+#   Project 4
+def compare_regex_beginning_end(regex: str, string: str):
+    """Adds the wildcard characters ^ and $ to the regex engine"""
+    if not regex:
+        return True
+    if regex[0] == "^" and regex[-1] == "$":
+        return compare_regex_same_length(regex[1:], string)
+    if regex[0] == "^":
+        return compare_regex_same_length(regex[1], string)
+    if regex[-1] == "$":
+        return compare_regex_variable_length(regex, string)
+
+    return compare_regex_variable_length(regex, string)
+
+
+def entry_point(input_string):
+    """Method to make simpler unit tests"""
+    regex, string = input_string.split("|")
+    return compare_regex_beginning_end(regex, string)
+
+
 if __name__ == '__main__':
-    regex_input, string_input = input().split("|")
-    print(compare_regex_variable_length(regex_input, string_input))
+    print(entry_point(input()))
