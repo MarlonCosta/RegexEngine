@@ -10,18 +10,42 @@ def compare_regex_char(regex: str, string: str):
 
 
 # Project 2
-def compare_regex_same_length(regex: str, string: str):
+def compare_regex_same_length(regex: str, string: str, last: str = ""):
     """Checks if a regex matches a string of the same length"""
     if not regex:
+        return True
+    if not string and (regex[0] == "*" or regex[0] == "+"):
         return True
     if regex == "$":
         return string == ""
     if not string:
         return False
+
+    if regex[0] == "?":
+        return compare_regex_same_length(regex[1:], string)
+
+    if regex[0] == "*":
+        if compare_regex_char(last, string[0]):
+            return compare_regex_same_length(regex, string[1:], string[0])
+        else:
+            return compare_regex_same_length(regex[1:], string, string[0])
+
+    if regex[0] == "+":
+        if compare_regex_char(last, string[0]):
+            return compare_regex_same_length(regex, string[1:], last)
+        else:
+            return compare_regex_same_length(regex[1:], string)
+
     if not compare_regex_char(regex[0], string[0]):
-        return False
+        try:
+            if regex[1] == "?" or regex[1] == "*":
+                return compare_regex_same_length(regex[1:], string, regex[0])
+            else:
+                return False
+        except IndexError:
+            return False
     else:
-        return compare_regex_same_length(regex[1:], string[1:])
+        return compare_regex_same_length(regex[1:], string[1:], regex[0])
 
 
 # Project 3
