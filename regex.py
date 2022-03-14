@@ -1,87 +1,80 @@
-# Project 1
-def compare_regex_char(regex: str, string: str):
-    """"Checks if a 1-character regex matches a 1-character string"""
-    if (regex == "." and string != "") or regex == "":
-        return True
-    elif regex != ".":
-        return regex == string
-    else:
-        return False
-
-
-# Project 2
-def compare_regex_same_length(regex: str, string: str, last: str = ""):
-    """Checks if a regex matches a string of the same length"""
+def match(regex, string):
+    """match characters in input pattern and string one by one recursively"""
     if not regex:
         return True
-    if not string and (regex[0] == "*" or regex[0] == "+"):
-        return True
-    if regex == "$":
-        return string == ""
-    if not string:
+    elif not string:
         return False
-
-    if regex[0] == "?":
-        return compare_regex_same_length(regex[1:], string)
-
-    if regex[0] == "*":
-        if compare_regex_char(last, string[0]):
-            return compare_regex_same_length(regex, string[1:], string[0])
-        else:
-            return compare_regex_same_length(regex[1:], string, string[0])
-
-    if regex[0] == "+":
-        if compare_regex_char(last, string[0]):
-            return compare_regex_same_length(regex, string[1:], last)
-        else:
-            return compare_regex_same_length(regex[1:], string)
-
-    if not compare_regex_char(regex[0], string[0]):
-        try:
-            if regex[1] == "?" or regex[1] == "*":
-                return compare_regex_same_length(regex[1:], string, regex[0])
-            else:
-                return False
-        except IndexError:
-            return False
-    else:
-        return compare_regex_same_length(regex[1:], string[1:], regex[0])
+    elif '?' in regex[1:] and regex[1] == '?' and regex[0] != "\\":
+        return rep_zero_to_once(regex, string)
+    elif '*' in regex[1:] and regex[1] == '*' and regex[0] != "\\":
+        return rep_zero_to_many(regex, string)
+    elif '+' in regex[1:] and regex[1] == '+' and regex[0] != "\\":
+        return rep_once_to_many(regex, string)
+    elif regex[0] == "\\":
+        return match(regex[1:], string)
+    elif regex[0] in ('.', string[0]):
+        return match(regex[1:], string[1:])
+    return False
 
 
-# Project 3
-def compare_regex_variable_length(regex: str, string: str):
-    """Checks if a regex matches a string of variable length"""
-    if not regex:
+def rep_zero_to_once(regex, string):
+    """regex pattern's first character may appear once or zero times"""
+    if regex[0] not in (string[0]):
+        return match(regex[2:], string)
+    return match(regex[2:], string[1:])
+
+
+def rep_zero_to_many(regex, string):
+    """regex pattern's first character may appear zero or multiple times"""
+    if regex[0] not in (string[0], '.'):
+        return match(regex[2], string)
+    elif regex[-1] == '*' and len(string) == 1:
         return True
-    elif string:
-        if compare_regex_same_length(regex, string):
+    elif regex[:2] == '.*' and regex[-1] == string[0]:
+        return True
+    return match(regex, string[1:])
+
+
+def rep_once_to_many(regex, string):
+    """regex pattern's first character may appear once or multiple times"""
+    if regex[0] not in (string[0], '.'):
+        return False
+    elif len(regex) - len(string) == 1:
+        return match(regex[:1] + regex[2:], string)
+    return match(regex, string[1:])
+
+
+def bounded_match(regex, string):
+    """regex pattern is only searched at the beginning or at the end of a string"""
+    if regex[0] == '^' and regex[-1] == '$':
+        res = match(regex[1:-1], string)
+        if res and len(regex) - 2 == len(string):
             return True
-        else:
-            return compare_regex_variable_length(regex, string[1:])
-    else:
+        elif res and {'*', '?', '+'} & set(regex):
+            return True
         return False
+    elif regex[0] == '^':
+        return match(regex[1:], string[:len(regex) - 1])
+    elif regex[-1] == '$':
+        return match(regex[:-1], string[-len(regex) + 1:])
 
 
-#   Project 4
-def compare_regex_beginning_end(regex: str, string: str):
-    """Adds the wildcard characters ^ and $ to the regex engine"""
+def entry_point(regex, string):
     if not regex:
         return True
-    if regex[0] == "^" and regex[-1] == "$":
-        return compare_regex_same_length(regex[1:], string)
-    if regex[0] == "^":
-        return compare_regex_same_length(regex[1], string)
-    if regex[-1] == "$":
-        return compare_regex_variable_length(regex, string)
+    elif not string:
+        return False
+    elif regex[0] == '^' or regex[-1] == '$':
+        return bounded_match(regex, string)
+    elif match(regex, string):
+        return True
+    return entry_point(regex, string[1:])
 
-    return compare_regex_variable_length(regex, string)
 
-
-def entry_point(input_string):
-    """Method to make simpler unit tests"""
-    regex, string = input_string.split("|")
-    return compare_regex_beginning_end(regex, string)
+def main():
+    r, s = input().split('|')
+    print(entry_point(r, s))
 
 
 if __name__ == '__main__':
-    print(entry_point(input()))
+    main()
